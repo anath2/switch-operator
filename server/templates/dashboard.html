@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ESP32 Servo Control Dashboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="/static/dashboard.css">
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🎛️ ESP32 Servo Control Dashboard</h1>
+        
+        <div id="devices" hx-get="/fragments/devices" hx-trigger="load" hx-target="#devices" hx-swap="outerHTML">
+            <p>Loading devices...</p>
+        </div>
+        <div id="servo_move" hx-get="/fragments/servo_move" hx-trigger="load" hx-target="#servo_move" hx-swap="outerHTML">
+            <p>Loading servo move...</p>
+        </div>
+    </div>
+
+
+</body>
+</html>

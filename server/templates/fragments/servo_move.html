@@ -1,0 +1,17 @@
+<form id="servo-move-form" hx-post="/servo/move" hx-trigger="submit" hx-target="#servo-move-result" hx-swap="innerHTML">
+    <label for="device_id">Device:</label>
+    <select name="device_id" id="device_id">
+        {% for device_id, device in devices.items() %}
+            <option value="{{ device_id }}">{{ device_id }}</option>
+        {% endfor %}
+    </select>
+    <br><br>
+    <label for="angle">Angle (0-180):</label>
+    <input type="number" name="angle" id="angle" min="0" max="180" required>
+    <br><br>
+    <label for="speed">Speed (optional):</label>
+    <input type="number" name="speed" id="speed" min="1" max="100">
+    <br><br>
+    <button class="button" type="submit">Move Servo</button>
+</form>
+<div id="servo-move-result"></div>
