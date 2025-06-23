@@ -9,7 +9,7 @@
 2. Install Expressif Arduino C3 dev module
 
 3. Other settings:
-  -  Tools → Board → ESP32 Arduino → ESP32S3 Dev Module
+  -  Tools → Board → ESP32 Arduino → ESP32C3 Dev Module
   -  Tools → USB CDC On Boot → "Enabled"
   -  Tools → Upload Mode → "UART0 / Hardware CDC"
   -  Tools → USB Mode → "Hardware CDC and JTAG"
