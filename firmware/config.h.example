@@ -1,0 +1,24 @@
+#pragma once
+
+// --------- Wi-Fi -------------------------------------------------
+#ifndef WIFI_SSID
+#define WIFI_SSID ""
+#endif
+
+#ifndef WIFI_PASS
+#define WIFI_PASS ""
+#endif
+
+// --------- MQTT --------------------------------------------------
+#ifndef MQTT_SERVER
+#define MQTT_SERVER ""
+#endif
+
+#ifndef MQTT_PORT
+#define MQTT_PORT 1883        // integer
+#endif
+
+// --------- Device -----------------------------------------------
+#ifndef DEVICE_ID
+#define DEVICE_ID "esp32_servo_01"
+#endif
