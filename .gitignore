@@ -210,4 +210,4 @@ marimo/_lsp/
 __marimo__/
 
 # Arduino
-firmware/config.h
+firmware/esp32/config.h
