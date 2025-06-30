@@ -94,3 +94,28 @@ You should see something like this:
 ![looped](media/servo_sweep_demo.gif)
 
 
+## Send Messages via MQTT
+
+Install mosquitto server on your machine and run it.
+
+```bash
+brew install mosquitto
+brew services start mosquitto
+```
+
+Next you'll need edit mosquitto server config to allow connections from the network. Edit the file `/usr/local/etc/mosquitto/mosquitto.conf` and add the following line:
+
+```bash
+listener 1883 0.0.0.0
+allow_anonymous true
+```
+
+Make sure to use a username and password for production system.
+
+Next you'll need to install mosquitto client on your machine. You can use it to test the connection. For now restart the mosquitto service to apply the changes.
+
+```bash
+brew services restart mosquitto
+```
+
+That should be enough to send messages to the module via MQTT.
