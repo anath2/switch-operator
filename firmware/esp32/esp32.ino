@@ -4,16 +4,15 @@
 
 #include <WiFi.h>
 #include <PubSubClient.h>
-#include "config.h"
 #include <ESP32Servo.h>
 #include <ArduinoJson.h>
-
+#include "config.h"
 // =========================
 // MQTT Topics
 // =========================
 
-#define SERVO_SWEEP_TOPIC   "servo/+/sweep"
-#define SERVO_ROTATE_TOPIC  "servo/+/rotate"
+char servo_sweep_topic[64];
+char servo_rotate_topic[64];
 
 // =========================
 // WiFi, MQTT, Servo Init
@@ -40,18 +39,32 @@ void sweepServo() {
     Serial.println("Sweep complete.");
 }
 
-void rotateServo(int angle, int speed) {
-    const int k = 300; // Tune this
-    int delayMs = k / max(speed, 1); // Avoid division by zero
-    delayMs = constrain(delayMs, 5, 100); // Clamp between 5ms and 100ms
-    
-    Serial.print("Rotating servo to ");
-    Serial.print(angle);
-    Serial.print(" at speed ");
-    Serial.println(speed);
-   
-    myServo.write(angle);
-    delay(delayMs);
+void rotateServo(int offset, int speed) {
+    static int currentAngle = 0;
+    myServo.write(currentAngle);
+    delay(speed);
+
+    int targetAngle = currentAngle + offset;
+    targetAngle = constrain(targetAngle, 0, 180);
+
+    Serial.print("Rotating servo from ");
+    Serial.print(currentAngle);
+    Serial.print(" to ");
+    Serial.print(targetAngle);
+    Serial.print(" (offset: ");
+    Serial.print(offset);
+    Serial.print(", speed: ");
+    Serial.print(speed);
+    Serial.println(")");
+
+    int step = (targetAngle > currentAngle) ? 1 : -1;
+    for (int pos = currentAngle + step; pos != targetAngle + step; pos += step) {
+        myServo.write(pos);
+        delay(speed);
+        Serial.print("Servo at: ");
+        Serial.println(pos);
+    }
+
 }
 
 // =========================
@@ -68,10 +81,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     Serial.print("]: ");
     Serial.println(message);
 
-    if (String(topic) == SERVO_SWEEP_TOPIC && message == "sweep") {
+    String topicStr = String(topic);
+    if (topicStr == servo_sweep_topic && message == "sweep") {
         sweepServo();
     }
-    if (String(topic) == SERVO_ROTATE_TOPIC) {
+    if (topicStr == servo_rotate_topic) {
         StaticJsonDocument<128> doc;
         DeserializationError error = deserializeJson(doc, message);
         if (error) {
@@ -111,20 +125,18 @@ void connectToWiFi() {
 // Connect to MQTT broker with retries
 
 void connectToMQTT() {
+    // Connect to MQTT broker
     while (!client.connected()) {
         Serial.print("Attempting MQTT connection...");
 
         if (client.connect(MQTT_DEVICE_ID)) {
             Serial.println("connected");
-            String message = "hello from " + String(MQTT_DEVICE_ID);
-            client.publish(mqtt_topic, message.c_str());
-            Serial.println("Published hello message to MQTT");
-            client.subscribe(SERVO_SWEEP_TOPIC);
+            client.subscribe(servo_sweep_topic);
             Serial.print("Subscribed to ");
-            Serial.println(SERVO_SWEEP_TOPIC);
-            client.subscribe(SERVO_ROTATE_TOPIC);
+            Serial.println(servo_sweep_topic);
+            client.subscribe(servo_rotate_topic);
             Serial.print("Subscribed to ");
-            Serial.println(SERVO_ROTATE_TOPIC);
+            Serial.println(servo_rotate_topic);
         } else {
             Serial.print("failed, rc=");
             Serial.print(client.state());
@@ -139,10 +151,13 @@ void connectToMQTT() {
 // =========================
 
 void setup() {
+    // Construct topics
+    snprintf(servo_sweep_topic, sizeof(servo_sweep_topic), "/servo/%s/sweep", MQTT_DEVICE_ID);
+    snprintf(servo_rotate_topic, sizeof(servo_rotate_topic), "/servo/%s/rotate", MQTT_DEVICE_ID);
+
     Serial.begin(SERIAL_BAUD_RATE);
     delay(1000);
     myServo.attach(SERVO_PIN);
-    myServo.write(90); // Center servo
     connectToWiFi();
     client.setServer(MQTT_SERVER, MQTT_PORT);
     if (WiFi.status() == WL_CONNECTED) {
