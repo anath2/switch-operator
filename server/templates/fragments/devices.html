@@ -3,8 +3,6 @@
         {% for device_id, device in devices.items() %}
             <div class="device-card {{ 'online' if device.online else 'offline' }}">
                 <h3>📱 {{ device_id }} {{ '🟢' if device.online else '🔴' }}</h3>
-                <p>Current Angle: <span class="angle-display">{{ device.current_angle or 'Unknown' }}°</span></p>
-                <p>Status: {{ 'Sweeping' if device.is_sweeping else 'Idle' }}</p>
                 <p>Last Seen: {{ device.last_seen }}</p>
             </div>
         {% endfor %}

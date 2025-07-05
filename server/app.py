@@ -15,6 +15,7 @@ from fastapi.templating import Jinja2Templates
 import server.model as model
 from server.device import connected_devices
 from server.mqtt import MQTTManager
+import json
 
 
 templates = Jinja2Templates(directory="server/templates")
@@ -41,13 +42,6 @@ mqtt_manager = MQTTManager()
 app.mount("/static", StaticFiles(directory="server/static"), name="static")
 
 
-@app.get("/fragments/servo_move", response_class=HTMLResponse)
-async def get_servo_move_fragment(request: Request) -> HTMLResponse:
-    """Serve the servo move fragment for HTMX."""
-    devices = app.state.devices
-    return templates.TemplateResponse("fragments/servo_move.html", {"request": request, "devices": devices})
-
-
 @app.get("/fragments/devices", response_class=HTMLResponse)
 async def get_devices_fragment(request: Request) -> HTMLResponse:
     """Serve the devices fragment for HTMX."""
@@ -60,27 +54,29 @@ async def get_dashboard(request: Request) -> HTMLResponse:
     """Serve the web dashboard."""
     return templates.TemplateResponse("dashboard.html", {"request": request})
 
-
 @app.get("/devices", response_model=dict[str, model.DeviceStatus])
 async def get_devices() -> dict[str, model.DeviceStatus]:
     """Get all connected devices and their status."""
     return app.state.devices
 
+@app.get("/fragments/servo_rotate", response_class=HTMLResponse)
+async def get_servo_rotate_fragment(request: Request) -> HTMLResponse:
+    devices = app.state.devices
+    return templates.TemplateResponse("fragments/servo_rotate.html", {"request": request, "devices": devices})
 
-@app.post("/servo/move", response_model=dict[str, model.ServoCommand])
-async def move_servo(command: model.ServoCommand) -> dict[str, str | int]:
-    """Move servo to specific angle."""
+@app.post("/servo/rotate", response_model=dict[str, str | int])
+async def rotate_servo(command: model.RotateCommand) -> dict[str, str | int]:
+    """Rotate servo to specific angle (matches firmware topic and payload)."""
     if command.device_id not in app.state.devices:
         raise HTTPException(status_code=404, detail="Device not found")
 
     mqtt_command = {
-        "type": "move",
         "angle": command.angle,
         "speed": command.speed,
     }
-
-    mqtt_manager.publish_command(command.device_id, mqtt_command)
-    return {"status": "command_sent", "device_id": command.device_id, "angle": command.angle}
+    # Publish to the /servo/{command.device_id}/rotate topic as expected by firmware
+    mqtt_manager.client.publish(f"/servo/{command.device_id}/rotate", json.dumps(mqtt_command))
+    return {"status": "rotate_command_sent", "device_id": command.device_id, "angle": command.angle}
 
 
 @app.get("/health")

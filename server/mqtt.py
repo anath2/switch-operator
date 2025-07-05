@@ -15,9 +15,9 @@ logger = logging.getLogger(__name__)
 MQTT_BROKER = "localhost"  # Change to your broker IP if different
 MQTT_PORT = 1883
 MQTT_TOPICS = {
-    "command": "servo/+/command",      # servo/{device_id}/command
-    "status": "servo/+/status",        # servo/{device_id}/status
-    "discovery": "servo/discovery",      # Device discovery
+    "command": "/servo/+/command",      # servo/{device_id}/command
+    "status": "/servo/+/status",        # servo/{device_id}/status
+    "discovery": "/servo/discovery",      # Device discovery
 }
 
 # Global state
@@ -48,14 +48,14 @@ class MQTTManager:
         """Handle incoming MQTT messages."""
         try:
             topic_parts = msg.topic.split('/')
-            if len(topic_parts) >= 3:
-                device_id = topic_parts[1]
-                message_type = topic_parts[2]
+            if len(topic_parts) >= 4:
+                device_id = topic_parts[2]
+                message_type = topic_parts[3]
                 payload = json.loads(msg.payload.decode())
 
                 if message_type == "status":
                     self.handle_device_status(device_id, payload)
-                elif topic_parts[1] == "discovery":
+                elif message_type == "discovery":
                     self.handle_device_discovery(payload)
 
         except Exception as e:
@@ -66,15 +66,12 @@ class MQTTManager:
         logger.warning("Disconnected from MQTT broker")
 
     def handle_device_status(self, device_id: str, payload: dict) -> None:
-        """Handle status updates from ESP32 devices."""
+        """Handle status updates from ESP32 devices, supporting minimal payloads."""
         connected_devices[device_id] = DeviceStatus(
             device_id=device_id,
             online=True,
             last_seen=datetime.now(),
-            current_angle=payload.get("angle"),
-            is_sweeping=payload.get("sweeping", False),
         )
-        logger.info(f"Status update from {device_id}: {payload}")
 
     def handle_device_discovery(self, payload: dict) -> None:
         """Handle new device discovery."""

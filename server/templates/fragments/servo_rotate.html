@@ -1,0 +1,34 @@
+<script>
+    htmx.on("htmx:afterRequest", function(evt) {
+        if (evt.detail.elt && evt.detail.elt.id === "servo-rotate-form") {
+            const resultDiv = document.getElementById("servo-rotate-result");
+            resultDiv.innerText = "Servo moving...";
+            setTimeout(() => { resultDiv.innerText = ""; }, 2000); // clear after 2 seconds
+        }
+    });
+</script>
+
+<form id="servo-rotate-form"
+      hx-post="/servo/rotate"
+      hx-trigger="submit"
+      hx-target="#servo-rotate-result"
+      hx-swap="innerHTML"
+      hx-ext="json-enc"
+      hx-encoding="json">
+    <label for="device_id">Device:</label>
+    <select name="device_id" id="device_id">
+        {% for device_id, device in devices.items() %}
+            <option value="{{ device_id }}">{{ device_id }}</option>
+        {% endfor %}
+    </select>
+    <br><br>
+    <label for="angle">Angle (0-180):</label>
+    <input type="number" name="angle" id="angle" min="0" max="180" required>
+    <br><br>
+    <label for="speed">Speed (optional):</label>
+    <input type="number" name="speed" id="speed" min="1" max="100">
+    <br><br>
+    <button class="button" type="submit">Rotate Servo</button>
+</form>
+<div id="servo-rotate-result"></div>
+

@@ -5,12 +5,10 @@ from pydantic import BaseModel, Field
 
 
 class DeviceStatus(BaseModel):
-    """Status of a connected ESP32 device."""
+    """Status of a connected ESP32 device. Supports minimal payloads (only device_id required)."""
     device_id: str
     online: bool
     last_seen: datetime
-    current_angle: int | None = None
-    is_sweeping: bool = False
 
 
 class SweepCommand(BaseModel):
@@ -22,11 +20,16 @@ class SweepCommand(BaseModel):
     speed: int | None = Field(50, ge=1, le=1000, description="Sweep speed (ms)")
 
 
-class ServoCommand(BaseModel):
-    """Command to move a servo to a specific angle and speed."""
+class RotateCommand(BaseModel):
+    """Command to rotate a servo to a specific angle and speed (matches firmware expectations).
+    Attributes:
+        device_id (str): ESP32 device identifier
+        angle (int): Servo angle (0-180)
+        speed (int): Rotation speed (ms)
+    """
     device_id: str = Field(..., description="ESP32 device identifier")
     angle: int = Field(..., ge=0, le=180, description="Servo angle (0-180)")
-    speed: int | None = Field(100, ge=1, le=1000, description="Movement speed (ms)")
+    speed: int | None = Field(100, ge=1, le=1000, description="Rotation speed (ms)")
 
 
 class VoiceCommand(BaseModel):

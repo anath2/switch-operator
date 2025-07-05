@@ -7,12 +7,14 @@
 #include <ESP32Servo.h>
 #include <ArduinoJson.h>
 #include "config.h"
+
 // =========================
 // MQTT Topics
 // =========================
 
 char servo_sweep_topic[64];
 char servo_rotate_topic[64];
+char servo_status_topic[64];
 
 // =========================
 // WiFi, MQTT, Servo Init
@@ -21,10 +23,21 @@ char servo_rotate_topic[64];
 WiFiClient espClient;
 PubSubClient client(espClient);
 Servo myServo;
-
+unsigned long lastStatusPublish = 0; // Used to track when the last status was published
+const unsigned long statusPublishInterval = 5000; // ms
 // =========================
 // Servo Control
 // =========================
+
+void publishStatus() {
+    StaticJsonDocument<64> doc;
+    doc["device_id"] = MQTT_DEVICE_ID;
+    char payload[64];
+    serializeJson(doc, payload);
+    client.publish(servo_status_topic, payload);
+    Serial.print("Published status: ");
+    Serial.println(payload);
+}
 
 void sweepServo() {
     Serial.println("Sweeping servo...");
@@ -154,6 +167,7 @@ void setup() {
     // Construct topics
     snprintf(servo_sweep_topic, sizeof(servo_sweep_topic), "/servo/%s/sweep", MQTT_DEVICE_ID);
     snprintf(servo_rotate_topic, sizeof(servo_rotate_topic), "/servo/%s/rotate", MQTT_DEVICE_ID);
+    snprintf(servo_status_topic, sizeof(servo_status_topic), "/servo/%s/status", MQTT_DEVICE_ID);
 
     Serial.begin(SERIAL_BAUD_RATE);
     delay(1000);
@@ -165,6 +179,7 @@ void setup() {
         client.setCallback(mqttCallback);
     }
 }
+
 
 void loop() {
     // Check WiFi connection
@@ -183,4 +198,11 @@ void loop() {
         connectToMQTT();
     }
     client.loop();
+
+    // Periodically publish status
+    unsigned long now = millis();
+    if (now - lastStatusPublish > statusPublishInterval) {
+        publishStatus();
+        lastStatusPublish = now;
+    }
 }
